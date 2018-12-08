@@ -104,30 +104,6 @@ VertexTextured platformVertices[4] = {
 	{ platformSize, frontY,  platformSize,   1.0f,  1.0f }  // 3 - TR
 };
 
-//VARIABLES FOR THE PHONG SHADER
-CSCI441::ShaderProgram* phongShaderProgram = NULL;
-
-// attrib locs
-GLint vpos_attrib_location = -1;
-GLint norm_attrib_location = -1;
-GLint texel_attrib_location = -1;
-
-// uniform locs
-GLint mv_uniform_location = -1;
-GLint model_uniform_location = -1;
-GLint camera_uniform_location = -1;
-GLint texture_uniform_location = -1;
-
-// lighting locs
-GLint light_position_uniform_location = -1;
-GLint light_intensities_uniform_location = -1;
-GLint light_attenuation_uniform_location = -1;
-GLint light_ambientCoeff_uniform_location = -1;
-
-
-
-
-
 //******************************************************************************
 //
 // Helper Functions
@@ -466,23 +442,6 @@ void setupShaders() {
 	time_uniform_location = shaderProgramHandle->getUniformLocation("time");
 	vpos_attrib_location = shaderProgramHandle->getAttributeLocation("vPosition");
 
-	//phong shader setup
-	phongShaderProgram = new CSCI441::ShaderProgram("shaders/vertexShader.v.glsl", "shaders/fragmentShader.f.glsl");
-
-	light_position_uniform_location = phongShaderProgram->getUniformLocation("light.position");
-	light_intensities_uniform_location = phongShaderProgram->getUniformLocation("light.intensities");
-	light_attenuation_uniform_location = phongShaderProgram->getUniformLocation( "light.attenuation");
-	light_ambientCoeff_uniform_location = phongShaderProgram->getUniformLocation( "light.ambientCoefficient");
-
-	mv_uniform_location = phongShaderProgram->getUniformLocation("mvMatrix");
-	model_uniform_location = phongShaderProgram->getUniformLocation( "modelMatrix");
-	camera_uniform_location = phongShaderProgram->getUniformLocation( "cameraPos");
-	texture_uniform_location = phongShaderProgram->getUniformLocation( "texSampler");
-
-	vpos_attrib_location = phongShaderProgram->getAttributeLocation( "vertCoord");
-	norm_attrib_location = phongShaderProgram->getAttributeLocation( "vertNormal");
-	texel_attrib_location = phongShaderProgram->getAttributeLocation( "texCoord");
-
 }
 
 
@@ -707,9 +666,6 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 		glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_SHORT, (void*)0);
 	}
 
-	phongShaderProgram->useProgram();
-
-
 	glBindTexture( GL_TEXTURE_2D, platformTextureHandle );
 	//Rotate platform
 	m = glm::rotate(m, float(xAngle), glm::vec3(1.0, 0.0, 0.0));
@@ -768,7 +724,7 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 	if (!isLost) {
 		user->draw(m, uniform_modelMtx_loc, uniform_color_loc);
 	}
-	
+
 }
 
 void movePlayer() {
