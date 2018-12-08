@@ -62,6 +62,9 @@ GLuint mazeTextureHandle;
 GLuint skyboxVAOds[6];						// all of our skybox VAOs
 GLuint skyboxHandles[6];                    // all of our skybox handles
 
+CSCI441::ShaderProgram* lightingShaderProgram;
+GLint lmvp_uniform_location = -1, ltime_uniform_location = -1, lvpos_attrib_location = -1, lcamera_uniform_location = -1, lnormal_attribute_locaton = -1, lvertexTexCoordLocation;
+
 CSCI441::ShaderProgram* textureShaderProgram = NULL;
 GLint uniform_modelMtx_loc, uniform_viewProjetionMtx_loc, uniform_tex_loc, uniform_color_loc;
 GLint attrib_vPos_loc, attrib_vTextureCoord_loc;
@@ -428,6 +431,28 @@ void setupTextures() {
 }
 
 void setupShaders() {
+
+	//for lighting
+	// TODO #7
+	lightingShaderProgram = new CSCI441::ShaderProgram("shaders/modelShader.v.glsl", "shaders/modelShader.f.glsl");
+	// TODO #8A
+	lmvp_uniform_location = lightingShaderProgram->getUniformLocation("mvpMatrix");
+	if (mvp_uniform_location < 0) printf("Errors and badness1");
+	// TODO #10A
+	ltime_uniform_location = lightingShaderProgram->getUniformLocation("time");
+	// TODO #8B
+	//lvpos_attrib_location = lightingShaderProgram->getUniformLocation("vPosition");
+	lcamera_uniform_location = lightingShaderProgram->getUniformLocation("camPos");
+	if (lcamera_uniform_location < 0) printf("Errors and badness4");
+	//if (lvpos_attrib_location < 0) printf("Errors and badness2");
+
+	//lnormal_attribute_locaton = lightingShaderProgram->getUniformLocation("vMormal");
+	//if (lnormal_attribute_locaton < 0) printf("Errors and badness3");
+
+	lvertexTexCoordLocation = lightingShaderProgram->getAttributeLocation("texCoord");
+	if (lvertexTexCoordLocation < 0) printf("Errors and badness8");
+
+	//for skybox
 	textureShaderProgram = new CSCI441::ShaderProgram( "shaders/textureShader.v.glsl", "shaders/textureShader.f.glsl" );
 	uniform_modelMtx_loc         = textureShaderProgram->getUniformLocation( "modelMtx" );
 	uniform_viewProjetionMtx_loc = textureShaderProgram->getUniformLocation( "viewProjectionMtx" );
@@ -668,17 +693,22 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 	glm::vec3 white(1,1,1);
 	glUniform3fv( uniform_color_loc, 1, &white[0] );
 
+
 	for( unsigned int i = 0; i < 6; i++ ) {
 		glBindTexture( GL_TEXTURE_2D, skyboxHandles[i] );
 		glBindVertexArray(skyboxVAOds[i]);
 		glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_SHORT, (void*)0);
 	}
 
+
+
+
 	glBindTexture( GL_TEXTURE_2D, platformTextureHandle );
 	//Rotate platform
 	m = glm::rotate(m, float(xAngle), glm::vec3(1.0, 0.0, 0.0));
 	m = glm::rotate(m, float(zAngle), glm::vec3(0.0, 0.0, 1.0));
 	m = glm::scale(m, glm::vec3(groundSize, .5, groundSize));
+	//m = vp * m;
 	glUniformMatrix4fv(uniform_modelMtx_loc, 1, GL_FALSE, &m[0][0]);
 	CSCI441::drawSolidCube(1);
 
@@ -692,7 +722,7 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 			m = glm::translate(m, mazePieces[i]);
 		//	m = glm::translate(m, glm::vec3(groundSize / 20, 0.0, groundSize / 20));
 			m = glm::scale(m, glm::vec3(groundSize / 10, 3.0, groundSize / 10));
-
+			//m = vp * m;
 			glUniformMatrix4fv(uniform_modelMtx_loc, 1, GL_FALSE, &m[0][0]);
 			CSCI441::drawSolidCube(1);
 	}
@@ -705,17 +735,22 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 	m = glm::translate(m, finishPos);
 	m = glm::translate(m, glm::vec3(groundSize / 20, 0.0, groundSize / 20));
 	m = glm::scale(m, glm::vec3(groundSize / 10, 0.0, groundSize / 10));
+	//m = vp * m;
 	glUniformMatrix4fv(uniform_modelMtx_loc, 1, GL_FALSE, &m[0][0]);
 	CSCI441::drawSolidCube(1);
 
+
 	//Draw the player
+
+	glUniform3f(lcamera_uniform_location, eyePoint.x, eyePoint.y, eyePoint.z);
 	m = glm::mat4(1.0);
 
 	m = glm::rotate(m, float(xAngle), glm::vec3(1.0, 0.0, 0.0));
 	m = glm::rotate(m, float(zAngle), glm::vec3(0.0, 0.0, 1.0));
 	glm::vec3 loc = glm::vec3(user->location.x / groundSize, user->location.y / groundSize, user->location.z / groundSize);
 	m = glm::translate(m, loc);
-	glUniformMatrix4fv(uniform_modelMtx_loc, 1, GL_FALSE, &m[0][0]);
+	glm::mat4 mm = vp * m;
+	glUniformMatrix4fv(lmvp_uniform_location, 1, GL_FALSE, &mm[0][0]);
 
 	if (isLost) {
 		shaderProgramHandle->useProgram();
@@ -730,7 +765,8 @@ void renderScene( glm::mat4 viewMatrix, glm::mat4 projectionMatrix ) {
 		user->draw(mvpMtx, mvp_uniform_location, uniform_color_loc);
 	}
 	if (!isLost) {
-		user->draw(m, uniform_modelMtx_loc, uniform_color_loc);
+		lightingShaderProgram->useProgram();
+		user->draw(mm, lmvp_uniform_location, uniform_color_loc);
 	}
 
 }

@@ -39,5 +39,5 @@ void main() {
     // TODO #C
     gl_Position = mvpMatrix * vec4(newVertex, 1);
     // TODO #F2
-	theColor = glm::vec3(1 + sin(time), 1 + sin(time), 1 + cos(time));
+	theColor = vec3(1 + sin(time), 1 + sin(time), 1 + cos(time));
 }
