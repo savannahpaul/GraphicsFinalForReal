@@ -616,7 +616,15 @@ void populateMarbles() {
 
 void populateMaze() {
 	string line;
-	ifstream ipf("config.txt");
+	char* s;
+	if (levelNum == 1) {
+		s = "config.txt";
+	}
+	else {
+		s = "config2.txt";
+	}
+	mazePieces.clear();
+	ifstream ipf(s);
 	if (ipf.is_open()) {
 		double xLoc = -groundSize/2;
 		while (getline(ipf, line)) {
